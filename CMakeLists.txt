@@ -3,6 +3,9 @@
 # © 2018 by Richard Walters
 
 cmake_minimum_required(VERSION 3.8)
+
+project(Uri)
+
 set(This Uri)
 
 set(Headers
