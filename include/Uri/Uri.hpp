@@ -40,16 +40,6 @@ namespace Uri {
         Uri();
 
         /**
-         * This method sets the character or character sequence
-         * that should be interpreted as a path delimiter.
-         *
-         * @param[in] newPathDelimiter
-         *      This is the character or character sequence
-         *      that should be interpreted as path delimiter.
-         */
-        void setPathDelimiter(const std::string& newPathDelimiter);
-
-        /**
          * This method builds the URI from the elements parsed
          * from the given string rendering of URI.
          *

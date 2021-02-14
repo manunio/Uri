@@ -14,13 +14,6 @@ namespace Uri {
      * This contains the private properties of a Uri instance.
      */
     struct Uri::Impl {
-
-        /**
-         * This is the character or character sequence
-         * that should be interpreted as path delimiter.
-         */
-        std::string pathDelimiter = "/";
-
         /**
          * This is the "scheme" element of the URI.
          */
@@ -44,9 +37,6 @@ namespace Uri {
             : impl_(new Impl) {
     }
 
-    void Uri::setPathDelimiter(const std::string &newPathDelimiter) {
-        impl_->pathDelimiter = newPathDelimiter;
-    }
 
     bool Uri::ParseFromString(const std::string &uriString) {
 
@@ -58,7 +48,7 @@ namespace Uri {
 
         // Next parse the host.
         if (rest.substr(0, 2) == "//") {
-            const auto authorityEnd = rest.find(impl_->pathDelimiter, 2);
+            const auto authorityEnd = rest.find('/', 2);
             impl_->host = rest.substr(2, authorityEnd - 2);
             rest = rest.substr(authorityEnd);
         } else {
@@ -73,7 +63,7 @@ namespace Uri {
         impl_->path.clear();
         if (!rest.empty()) {
             for (;;) {
-                auto pathDelimiter = rest.find(impl_->pathDelimiter);
+                auto pathDelimiter = rest.find('/');
                 if (pathDelimiter == std::string::npos) {
                     impl_->path.push_back(rest);
                     break;
@@ -82,7 +72,7 @@ namespace Uri {
                             rest.begin(),
                             rest.begin() + pathDelimiter
                     );
-                    rest = rest.substr(pathDelimiter + impl_->pathDelimiter.length());
+                    rest = rest.substr(pathDelimiter + 1);
                 }
             }
         }
