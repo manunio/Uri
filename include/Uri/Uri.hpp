@@ -33,8 +33,6 @@ namespace Uri {
         Uri &operator=(Uri &&) = delete;
 
         // Public methods
-        void setPathDelimiter(char i);
-
     public:
         /**
          * This is the default constructor.

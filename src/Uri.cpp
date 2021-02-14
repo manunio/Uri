@@ -80,7 +80,7 @@ namespace Uri {
                 } else {
                     impl_->path.emplace_back(
                             rest.begin(),
-                            rest.end() + pathDelimiter
+                            rest.begin() + pathDelimiter
                     );
                     rest = rest.substr(pathDelimiter + impl_->pathDelimiter.length());
                 }
