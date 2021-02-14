@@ -32,19 +32,29 @@ There are two distinct steps in the build process:
 ### Build system generation
 
 Generate the build system using [CMake](https://cmake.org/) from the solution root.  For example:
-
+* Windows 
 ```bash
 mkdir build
 cd build
 cmake -G "Visual Studio 15 2017" -A "x64" ..
 ```
-
+* Linux
+```shell script
+mkdir build
+cd build
+cmake ..
+```
 ### Compiling, linking, et cetera
 
 Either use [CMake](https://cmake.org/) or your toolchain's IDE to build.
 For [CMake](https://cmake.org/):
-
+* Windows
 ```bash
 cd build
 cmake --build . --config Release
+```
+* Linux
+```shell script
+cd build
+make
 ```

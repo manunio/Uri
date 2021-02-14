@@ -62,7 +62,7 @@
                   / path-absolute   ; begins with "/" but not "//"
                   / path-noscheme   ; begins with a non-colon segment
                   / path-rootless   ; begins with a segment
-                  / path-empty      ; zero characters
+                  / path-empty      ; zero character````````s
     path-abempty  = *( "/" segment )
     path-absolute = "/" [ segment-nz *( "/" segment ) ]
     path-noscheme = segment-nz-nc *( "/" segment )

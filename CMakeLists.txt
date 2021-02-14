@@ -4,9 +4,15 @@
 
 cmake_minimum_required(VERSION 3.8)
 
-project(Uri)
+project(Uri CXX)
 
 set(This Uri)
+
+set(CONAN_EXTRA_REQUIRES "")
+set(CONAN_EXTRA_OPTIONS "")
+
+include(cmake/Conan.cmake)
+run_conan()
 
 set(Headers
     include/Uri/Uri.hpp
