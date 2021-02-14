@@ -12,6 +12,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <cstdint>
 
 namespace Uri {
 
@@ -73,19 +74,41 @@ namespace Uri {
 
         /**
         * This method returns the "host" element of the URI,
-        * as a sequence of steps.
+        * as a sequence of segments.
         *
         * @note
-        *      If the first step of the path is an empty string,
+        *      If the first segment  of the path is an empty string,
         *      then the URI has an absolute path.
         *
         * @return
         *      The "path" element of the URI is returned,
-        *      as a sequence of steps.
+        *      as a sequence of segments.
         * @retval
         *      This is returned if there is no "host" element in the URI.
         * */
         std::vector<std::string> GetPath() const;
+
+        /**
+         * This method returns an indication of the whether or not the
+         * URI includes a port number.
+         * @return
+         *      An indication of whether or not the
+         *      URI includes a port number is returned.
+         */
+        bool HasPort() const;
+
+        /**
+         * This method returns the port number element of the URI,
+         * if it has one.
+         *
+         * @return
+         *      The port number element of the URI is returned.
+         * @note
+         *      The returned port number is only valid if the
+         *      HasPort method is true.
+         */
+        uint16_t GetPort() const;
+
         // Private properties
     private:
         /**

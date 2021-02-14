@@ -8,6 +8,7 @@
 
 #include <string>
 #include <Uri/Uri.hpp>
+#include <cinttypes>
 
 namespace Uri {
     /**
@@ -25,8 +26,18 @@ namespace Uri {
         std::string host;
 
         /**
-        * This is the "path" element of the URI,
-        * as a sequence of steps.
+         * This flag indicates whether or not the
+         * URI includes a port number.
+        */
+        bool hasPort = false;
+        /**
+        * This is the "port" element of the URI.
+       */
+        uint16_t port = 0;
+
+        /**
+         * This is the "path" element of the URI,
+         * as a sequence of segments.
         */
         std::vector<std::string> path;
     };
@@ -47,9 +58,30 @@ namespace Uri {
         auto rest = uriString.substr(schemeEnd + 1);
 
         // Next parse the host.
+        impl_->hasPort = false;
         if (rest.substr(0, 2) == "//") {
             const auto authorityEnd = rest.find('/', 2);
-            impl_->host = rest.substr(2, authorityEnd - 2);
+            const auto portDelimiter = rest.find(':');
+            if (portDelimiter == std::string::npos) {
+                impl_->host = rest.substr(2, authorityEnd - 2);
+            } else {
+                impl_->host = rest.substr(2, portDelimiter - 2);
+
+                // Next parse the port number.
+                uint32_t newPort = 0;
+                for (auto c : rest.substr(portDelimiter + 1, authorityEnd - portDelimiter - 1)) {
+                    if ((c < '0') || (c > '9'))
+                        return false;
+                    newPort *= 10;
+                    newPort += (uint16_t) (c - '0');
+                    // TODO: refractor for below warning.
+                    if ((newPort & ~((1 << 16) - 1)) != 0) {
+                        return false;
+                    }
+                }
+                impl_->port = (uint16_t) newPort;
+                impl_->hasPort = true;
+            }
             rest = rest.substr(authorityEnd);
         } else {
             impl_->host.clear();
@@ -87,6 +119,14 @@ namespace Uri {
 
     std::vector<std::string> Uri::GetPath() const {
         return impl_->path;
+    }
+
+    bool Uri::HasPort() const {
+        return impl_->hasPort;
+    }
+
+    uint16_t Uri::GetPort() const {
+        return impl_->port;
     }
 
 
