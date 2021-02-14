@@ -56,12 +56,10 @@ namespace Uri {
         }
 
         // Finally, parse the "path".
-        // "/" -> [""]
-        // "" -> []
-        // "/foo" -> ["", "foo"]
-        // "foo/" -> ["foo", ""]
         impl_->path.clear();
-        if (!rest.empty()) {
+        if (rest == "/") {
+            impl_->path.emplace_back("");
+        } else if (!rest.empty()) {
             for (;;) {
                 auto pathDelimiter = rest.find('/');
                 if (pathDelimiter == std::string::npos) {

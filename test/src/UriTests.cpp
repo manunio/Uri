@@ -38,7 +38,6 @@ TEST(UriTests, ParseFromStringUrnDefaultPathDeimiter) {
     );
 }
 
-
 TEST(UriTests, ParseFromStringPathCornerCases) {
     struct TestVector {
         std::string PathIn;
