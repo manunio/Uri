@@ -1,0 +1,6 @@
+/home/maxx/dev/cpp/webserver-rfc-7230/Uri/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/maxx/dev/cpp/webserver-rfc-7230/Uri/cmake-build-debug/CMakeFiles/Uri.dir
+/home/maxx/dev/cpp/webserver-rfc-7230/Uri/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/maxx/dev/cpp/webserver-rfc-7230/Uri/cmake-build-debug/test/CMakeFiles/rebuild_cache.dir
+/home/maxx/dev/cpp/webserver-rfc-7230/Uri/cmake-build-debug/test/CMakeFiles/edit_cache.dir
+/home/maxx/dev/cpp/webserver-rfc-7230/Uri/cmake-build-debug/test/CMakeFiles/UriTests.dir

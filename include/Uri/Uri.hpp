@@ -109,6 +109,56 @@ namespace Uri {
          */
         uint16_t GetPort() const;
 
+        /**
+         * This method returns an indication of whether or not
+         * the URI is a relative reference.
+         *
+         * @return
+         *      An indication whether or not the URI is a
+         *      relative reference is returned.
+         */
+        bool IsRelativeReference() const;
+
+        /**
+        * This method returns an indication of whether or not
+        * the URI is a relative path.
+        *
+        * @return
+        *      An indication whether or not the URI is a
+        *      relative path is returned.
+        */
+        bool ContainsRelativePath() const;
+
+        /**
+         * This method returns the "fragment" element of the URI.
+         *
+         * @return
+         *      The "fragment" element of the URI is returned.
+         * @retval
+         *      This is returned if there is no "fragment" element in the URI.
+         * */
+        std::string GetFragment() const;
+
+        /**
+        * This method returns the "query" element of the URI.
+         *
+        * @return
+        *      The "query" element of the URI is returned.
+        * @retval
+        *      This is returned if there is no "query" element in the URI.
+        * */
+        std::string GetQuery() const;
+
+        /**
+        * This method returns the "UserInfo" element of the URI.
+        *
+        * @return
+        *      The "UserInfo" element of the URI is returned.
+        * @retval
+        *      This is returned if there is no "UserInfo" element in the URI.
+        * */
+        std::string GetUserInfo() const;
+
         // Private properties
     private:
         /**
