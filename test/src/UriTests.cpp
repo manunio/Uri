@@ -246,4 +246,12 @@ TEST(UriTests, ParseFromStringUserInfo) {
 
 }
 
+
+TEST(UriTests, ParseFromStringTWiceFirstWithUserInfoThenWithout) {
+    Uri::Uri uri{};
+    ASSERT_TRUE(uri.ParseFromString("http://manu@www.example.com/foo/bar"));
+    ASSERT_TRUE(uri.ParseFromString("/foo/bar"));
+    ASSERT_TRUE(uri.GetUserInfo().empty());
+}
+
 #pragma clang diagnostic pop

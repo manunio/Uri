@@ -111,8 +111,6 @@ namespace Uri {
         }
 
         // Next, parse the host.
-        impl_->hasPort = false;
-
         const auto pathEnd = rest.find_first_of("?#");
         auto authorityAndPathString = rest.substr(0, pathEnd);
         const auto queryAndOrFragment = rest.substr(authorityAndPathString.length());
@@ -143,21 +141,22 @@ namespace Uri {
             // Next, parsing host and port from the authority and path.
             const auto portDelimiter = hostPortString.find(':');
             if (portDelimiter == std::string::npos) {
-                impl_->host = hostPortString.substr(0, authorityEnd);
+                impl_->host = hostPortString;
+                impl_->hasPort = false;
             } else {
                 impl_->host = hostPortString.substr(0, portDelimiter);
+                const auto portString = hostPortString.substr(portDelimiter + 1);
 
                 // Next, parse the port number.
-                if (!ParseUint16(
-                        hostPortString.substr(portDelimiter + 1, authorityEnd - portDelimiter - 1),
-                        impl_->port
-                )) {
+                if (!ParseUint16(portString, impl_->port)) {
                     return false;
                 }
                 impl_->hasPort = true;
             }
         } else {
+            impl_->userInfo.clear();
             impl_->host.clear();
+            impl_->hasPort = false;
             pathString = authorityAndPathString;
         }
 
