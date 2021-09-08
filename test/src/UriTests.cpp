@@ -5,7 +5,7 @@
  *
  * This module contains the unit tests of the Uri::Uri class.
  *
- * © 2018 by Richard Walters
+ * © 2021 Manu Nair
  */
 
 #include <gtest/gtest.h>

@@ -1,6 +1,6 @@
 # CMakeLists.txt for Uri
 #
-# © 2018 by Richard Walters
+# © 2021 Manu Nair
 
 cmake_minimum_required(VERSION 3.8)
 
