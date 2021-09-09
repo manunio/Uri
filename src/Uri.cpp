@@ -66,6 +66,44 @@ namespace {
         }
         return !stillPassing(' ', true);
     }
+
+    /**
+     * This function returns a strategy function that
+     * maybe used with the FailsMatch function to test a scheme
+     * to make sure its legal according to the standard.
+     *
+     * @return
+     *  A strategy function that may be used with the
+     *  FailsMatch function to test a scheme,
+     *  to make sure it is legal according to the standard is returned.
+     * */
+    std::function<bool(char, bool)> LegalSchemeCheckStrategy() {
+        auto isFirstCharacter = std::make_shared<bool>(true);
+        return [isFirstCharacter](char c, bool end) {
+            if (end) {
+                return !*isFirstCharacter;
+            }
+
+            bool check{};
+            if (*isFirstCharacter) {
+                check = (
+                        ((c >= 'a') && (c <= 'z')) ||
+                        ((c >= 'A') && (c <= 'Z'))
+                );
+            } else {
+                check = (
+                        ((c >= 'a') && (c <= 'z')) ||
+                        ((c >= 'A') && (c <= 'Z')) ||
+                        ((c >= '0') && (c <= '9')) ||
+                        (c == '+') ||
+                        (c == '-') ||
+                        (c == '.')
+                );
+            }
+            *isFirstCharacter = false;
+            return check;
+        };
+    }
 }
 
 namespace Uri {
@@ -216,37 +254,10 @@ namespace Uri {
             rest = uriString;
         } else {
             impl_->scheme = uriString.substr(0, schemeEnd);
-            bool isFirstCharacter = true;
-            if (
-                    FailsMatch(
-                            impl_->scheme,
-                            [&isFirstCharacter](char c, bool end) {
-
-                                if (end) {
-                                    return !isFirstCharacter;
-                                }
-
-                                bool check{};
-                                if (isFirstCharacter) {
-                                    check = (
-                                            ((c >= 'a') && (c <= 'z')) ||
-                                            ((c >= 'A') && (c <= 'Z'))
-                                    );
-                                } else {
-                                    check = (
-                                            ((c >= 'a') && (c <= 'z')) ||
-                                            ((c >= 'A') && (c <= 'Z')) ||
-                                            ((c >= '0') && (c <= '9')) ||
-                                            (c == '+') ||
-                                            (c == '-') ||
-                                            (c == '.')
-                                    );
-                                }
-                                isFirstCharacter = false;
-                                return check;
-                            }
-                    )
-                    ) {
+            if (FailsMatch(
+                    impl_->scheme,
+                    LegalSchemeCheckStrategy()
+            )) {
                 return false;
             }
             rest = uriString.substr(schemeEnd + 1);
