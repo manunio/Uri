@@ -67,6 +67,19 @@ namespace {
         return !stillPassing(' ', true);
     }
 
+    bool IsCharacterInSet(
+            char c,
+            std::initializer_list<char> characterSet) {
+        for (const auto *charInSet = characterSet.begin(); charInSet != characterSet.end(); ++charInSet) {
+            const auto first = *charInSet++; // TODO: refactor to avoid pointer arithmetic
+            const auto last = *charInSet;
+            if ((c >= first) && (c <= last)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * This function returns a strategy function that
      * maybe used with the FailsMatch function to test a scheme
@@ -86,19 +99,9 @@ namespace {
 
             bool check{};
             if (*isFirstCharacter) {
-                check = (
-                        ((c >= 'a') && (c <= 'z')) ||
-                        ((c >= 'A') && (c <= 'Z'))
-                );
+                check = IsCharacterInSet(c, {'a', 'z', 'A', 'Z'});
             } else {
-                check = (
-                        ((c >= 'a') && (c <= 'z')) ||
-                        ((c >= 'A') && (c <= 'Z')) ||
-                        ((c >= '0') && (c <= '9')) ||
-                        (c == '+') ||
-                        (c == '-') ||
-                        (c == '.')
-                );
+                check = IsCharacterInSet(c, {'a', 'z', 'A', 'Z', '0', '9', '+', '+', '-', '-', '.', '.'});
             }
             *isFirstCharacter = false;
             return check;
