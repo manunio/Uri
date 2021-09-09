@@ -246,7 +246,6 @@ TEST(UriTests, ParseFromStringUserInfo) {
 
 }
 
-
 TEST(UriTests, ParseFromStringTWiceFirstWithUserInfoThenWithout) {
     Uri::Uri uri{};
     ASSERT_TRUE(uri.ParseFromString("http://manu@www.example.com/foo/bar"));

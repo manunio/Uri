@@ -88,6 +88,45 @@ namespace Uri {
         * This is the "UserInfo" element of the URI.
         */
         std::string userInfo;
+
+        // Methods
+
+        /**
+         * This method builds internal path element sequence
+         * by parsing it from the given path string.
+         *
+         * @param[in] pathString
+         *      This is the string containing the whole part of the URI.
+         * @return
+         *  An indication if the path was parsed correctly or not
+         *  is returned.
+         *
+         * */
+        bool ParsePath(std::string &pathString) {
+            path.clear();
+            if (pathString == "/") {
+                // Special case of a path that is empty but needs a single
+                // empty-string element to indicate that it is absolute.
+                path.emplace_back("");
+                pathString.clear();
+            } else if (!pathString.empty()) {
+                for (;;) {
+                    auto pathDelimiter = pathString.find('/');
+                    if (pathDelimiter == std::string::npos) {
+                        path.push_back(pathString);
+                        pathString.clear();
+                        break;
+                    }
+                    path.emplace_back(
+                            pathString.begin(),
+                            pathString.begin() + pathDelimiter
+                    );
+                    pathString = pathString.substr(pathDelimiter + 1);
+
+                }
+            }
+            return true;
+        }
     };
 
     Uri::~Uri() = default;
@@ -161,27 +200,8 @@ namespace Uri {
         }
 
         // Next, parse the "path".
-        impl_->path.clear();
-        if (pathString == "/") {
-            // Special case of a path that is empty but needs a single
-            // empty-string element to indicate that it is absolute.
-            impl_->path.emplace_back("");
-            pathString.clear();
-        } else if (!pathString.empty()) {
-            for (;;) {
-                auto pathDelimiter = pathString.find('/');
-                if (pathDelimiter == std::string::npos) {
-                    impl_->path.push_back(pathString);
-                    pathString.clear();
-                    break;
-                }
-                impl_->path.emplace_back(
-                        pathString.begin(),
-                        pathString.begin() + pathDelimiter
-                );
-                pathString = pathString.substr(pathDelimiter + 1);
-
-            }
+        if (!impl_->ParsePath(pathString)) {
+            return false;
         }
 
         // Next, parse the fragment if there is one.
