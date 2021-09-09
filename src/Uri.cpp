@@ -9,6 +9,7 @@
 #include <string>
 #include <Uri/Uri.hpp>
 #include <cinttypes>
+#include <functional>
 
 namespace {
     /**
@@ -38,6 +39,32 @@ namespace {
         }
         number = (uint16_t) numberIn32Bits;
         return true;
+    }
+
+
+    /**
+     * This function takes a given 'stillPassing' strategy
+     * and invokes it on the sequence of characters in the given
+     * string, to check if the string passes or not.
+     *
+     * @param[in] candidate
+     * This a string to test.
+     *
+     * @param[in] stillPassing
+     *  This is a strategy to invoke in order to test the string.
+     *
+     * @return
+     *  An indication of whether or not the given candidate string
+     *  passes the test is returned.
+     *
+     * */
+    bool FailsMatch(const std::string &candidate, std::function<bool(char, bool)> stillPassing) {
+        for (const auto c: candidate) {
+            if (!stillPassing(c, false)) {
+                return true;
+            }
+        }
+        return !stillPassing(' ', true);
     }
 }
 
@@ -189,8 +216,42 @@ namespace Uri {
             rest = uriString;
         } else {
             impl_->scheme = uriString.substr(0, schemeEnd);
+            bool isFirstCharacter = true;
+            if (
+                    FailsMatch(
+                            impl_->scheme,
+                            [&isFirstCharacter](char c, bool end) {
+
+                                if (end) {
+                                    return !isFirstCharacter;
+                                }
+
+                                bool check{};
+                                if (isFirstCharacter) {
+                                    check = (
+                                            ((c >= 'a') && (c <= 'z')) ||
+                                            ((c >= 'A') && (c <= 'Z'))
+                                    );
+                                } else {
+                                    check = (
+                                            ((c >= 'a') && (c <= 'z')) ||
+                                            ((c >= 'A') && (c <= 'Z')) ||
+                                            ((c >= '0') && (c <= '9')) ||
+                                            (c == '+') ||
+                                            (c == '-') ||
+                                            (c == '.')
+                                    );
+                                }
+                                isFirstCharacter = false;
+                                return check;
+                            }
+                    )
+                    ) {
+                return false;
+            }
             rest = uriString.substr(schemeEnd + 1);
         }
+
 
         // Next, parse the host.
         const auto pathEnd = rest.find_first_of("?#");
