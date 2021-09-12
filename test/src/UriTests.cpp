@@ -323,7 +323,7 @@ TEST(UriTests, ParseFromStringUserInfoBarelylegalCharacters) {
     };
 
     const std::vector<TestVector> testVectors{
-            {"//%41@www.example.com/",     "A"},
+            {"//%41@www.example.com/",    "A"},
             {"//@www.example.com/",       ""},
             {"//!@www.example.com/",      "!"},
             {"//'@www.example.com/",      "'"},
@@ -339,6 +339,74 @@ TEST(UriTests, ParseFromStringUserInfoBarelylegalCharacters) {
         Uri::Uri uri{};
         ASSERT_TRUE(uri.ParseFromString(testVector.uriString)) << index;
         ASSERT_EQ(testVector.userInfo, uri.GetUserInfo());
+        ++index;
+    }
+
+}
+
+TEST(UriTests, ParseFromStringHostIllegalCharacters) {
+    const std::vector<std::string> testVectors{
+            {"//%X@www.example.com"},
+            {"//@www:example.com"},
+            {"//[vX.:]/"},
+    };
+
+    size_t index = 0;
+
+    for (const auto &testVector: testVectors) {
+        Uri::Uri uri{};
+        ASSERT_FALSE(uri.ParseFromString(testVector)) << index;
+        ++index;
+    }
+
+}
+
+TEST(UriTests, ParseFromStringHostBarelylegalCharacters) {
+
+    struct TestVector {
+        std::string uriString;
+        std::string host;
+    };
+
+    const std::vector<TestVector> testVectors{
+            {"//%41/",     "A"},
+            {"///",        ""},
+            {"//!/",       "!"},
+            {"//'/",       "'"},
+            {"//(/",       "("},
+            {"//;/",       ";"},
+            {"//1.2.3.4/", "1.2.3.4"},
+            {"//[v7.:]/",  "[v7.:]"},
+    };
+
+    size_t index = 0;
+
+    for (const auto &testVector: testVectors) {
+        Uri::Uri uri{};
+        ASSERT_TRUE(uri.ParseFromString(testVector.uriString)) << index;
+        ASSERT_EQ(testVector.host, uri.GetHost());
+        ++index;
+    }
+
+}
+
+TEST(UriTests, ParseFromStringDontMisinterpretColonInAuthorityAsSchemeDelimiter) {
+
+    const std::vector<std::string> testVectors{
+            {"//foo:bar@www.example.com/"},
+            {"//www.example.com/a:b"},
+            {"//www.example.com/foo?a:b"},
+            {"//www.example.com/foo#a:b"},
+            {"//[v7.:]/", "[v7.:]"},
+
+    };
+
+    size_t index = 0;
+
+    for (const auto &testVector: testVectors) {
+        Uri::Uri uri{};
+        ASSERT_TRUE(uri.ParseFromString(testVector)) << index;
+        ASSERT_TRUE(uri.GetScheme().empty());
         ++index;
     }
 

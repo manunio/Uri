@@ -282,15 +282,159 @@ namespace Uri {
             }
 
             // Next, parsing host and port from the authority and path.
-            const auto portDelimiter = hostPortString.find(':');
-            if (portDelimiter == std::string::npos) {
-                host = hostPortString;
+            std::string portString;
+            size_t decoderState = 0;
+            int decodedCharacter = 0;
+            host.clear();
+            for (const auto c: hostPortString) {
+                switch (decoderState) {
+                    case 0: { // first character
+                        if (c == '[') {
+                            host.push_back(c);
+                            decoderState = 4;
+                            break;
+                        } else {
+                            decoderState = 1;
+                        }
+                    } // skipping `break;` is intentional
+
+                    case 1: { // reg-name or IPv4Address
+                        if (c == '%') {
+                            decoderState = 2;
+                        } else if (c == ':') {
+                            decoderState = 9;
+                        } else {
+                            if (IsCharacterInSet(
+                                    c,
+                                    {
+                                            // unreserved
+                                            'a', 'z', 'A', 'Z', // ALPHA
+                                            '0', '9', //DIGIT
+                                            '-', '-', '.', '.', '_', '_', '~', '~',
+
+                                            // sub-delims
+                                            '!', '!', '$', '$', '&', '&', '\'', '\'', '(', '(', ')', ')',
+                                            '*', '*', '+', '+', ',', ',', ';', ';', '=', '=',
+
+                                            // (also allowed in reg-name)
+                                            ':', ':',
+                                    }
+                            )) {
+                                host.push_back(c);
+                            } else {
+                                return false;
+                            }
+                        }
+                    }
+                        break;
+
+                    case 2: { // % ...
+                        decoderState = 3;
+                        decodedCharacter <<= 4;
+                        if (IsCharacterInSet(c, {'0', '9'})) {
+                            decodedCharacter += (int) (c - '0');
+                        } else if (IsCharacterInSet(c, {'A', 'F'})) {
+                            decodedCharacter += (int) (c - 'A') + 10;
+                        } else {
+                            return false;
+                        }
+                    }
+                        break;
+
+                    case 3: { // %[0-9A-F] ...
+                        decoderState = 1;
+                        decodedCharacter <<= 4;
+                        if (IsCharacterInSet(c, {'0', '9'})) {
+                            decodedCharacter += (int) (c - '0');
+                        } else if (IsCharacterInSet(c, {'A', 'F'})) {
+                            decodedCharacter += (int) (c - 'A') + 10;
+                        } else {
+                            return false;
+                        }
+                        host.push_back((char) decodedCharacter);
+                    }
+                        break;
+
+                    case 4: { // IP-literal
+                        if (c == 'v') {
+                            host.push_back(c);
+                            decoderState = 6;
+                            break;
+                        } else {
+                            decoderState = 5;
+                        }
+                    }
+                        break;
+
+                    case 5: { // IPv6Address
+                        // TODO: research this offline first,
+                        //  before attempting to code it.
+                        host.push_back(c);
+                        if (c == ']') {
+                            decoderState = 8;
+                        }
+                    }
+                        break;
+
+                    case 6: { // IPvFuture: v ...
+                        if (c == '.') {
+                            decoderState = 7;
+                        } else if (!IsCharacterInSet(c, {'0', '9', 'A', 'F'})) {
+                            return false;
+                        }
+                        host.push_back(c);
+                    }
+                        break;
+
+                    case 7: { // IPvFuture:v 1*HEXDIG ...
+                        host.push_back(c);
+                        if (c == ']') {
+                            decoderState = 8;
+                        } else if (
+                                !IsCharacterInSet(
+                                        c,
+                                        {
+                                                // unreserved
+                                                'a', 'z', 'A', 'Z', // ALPHA
+                                                '0', '9', //DIGIT
+                                                '-', '-', '.', '.', '_', '_', '~', '~',
+
+                                                // sub-delims
+                                                '!', '!', '$', '$', '&', '&', '\'', '\'', '(', '(', ')', ')',
+                                                '*', '*', '+', '+', ',', ',', ';', ';', '=', '=',
+
+                                                // (also allowed in IPvFuture)
+                                                ':', ':',
+                                        }
+                                )) {
+                            return false;
+                        }
+                    }
+                        break;
+
+                    case 8: { // illegal to have anything else, unless its a colon,
+                        // in which case it's a port delimiter
+                        if (c == ':') {
+                            decoderState = 9;
+                        } else {
+                            return false;
+                        }
+                    }
+                        break;
+
+                    case 9: { // port
+                        portString.push_back(c);
+                    }
+                        break;
+
+                    default: {
+                        // fail-safe.
+                    }
+                }
+            }
+            if (portString.empty()) {
                 hasPort = false;
             } else {
-                host = hostPortString.substr(0, portDelimiter);
-                const auto portString = hostPortString.substr(portDelimiter + 1);
-
-                // Next, parse the port number.
                 if (!ParseUint16(portString, port)) {
                     return false;
                 }
@@ -311,7 +455,11 @@ namespace Uri {
     bool Uri::ParseFromString(const std::string &uriString) {
 
         // First, parse the "scheme".
-        auto schemeEnd = uriString.find(':');
+        auto authorityDelimiter = uriString.find("//");
+        if (authorityDelimiter == std::string::npos) {
+            authorityDelimiter = uriString.length();
+        }
+        const auto schemeEnd = uriString.substr(0, authorityDelimiter).find(':');
         std::string rest;
         if (schemeEnd == std::string::npos) {
             impl_->scheme.clear();
