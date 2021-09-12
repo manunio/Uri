@@ -458,7 +458,7 @@ TEST(UriTests, ParseFromStringPathBarelylegalCharacters) {
             {"/:/foo",                   {"",     ":",   "foo"}},
             {"foo@/bar",                 {"foo@", "bar"}},
             {"hello!",                   {"hello!"}},
-            {"urn:hello,%20w%6Frld",       {"hello, world"}},
+            {"urn:hello,%20w%6Frld",     {"hello, world"}},
             {"//example.com/foo/(bar)/", {"",     "foo", "(bar)", ""}},
     };
 
@@ -472,5 +472,130 @@ TEST(UriTests, ParseFromStringPathBarelylegalCharacters) {
     }
 
 }
+
+TEST(UriTests, ParseFromStringQueryIllegalCharacters) {
+    const std::vector<std::string> testVectors{
+            {"http://www.example.com/?foo[bar"},
+            {"http://www.example.com/?]bar"},
+            {"http://www.example.com/?foo]"},
+            {"http://www.example.com/?["},
+            {"http://www.example.com/?abc/foo]"},
+            {"http://www.example.com/?abc/["},
+            {"http://www.example.com/?foo]/abc"},
+            {"http://www.example.com/?[/abc"},
+            {"http://www.example.com/?foo]/"},
+            {"http://www.example.com/?[/"},
+            //
+            {"?foo[bar"},
+            {"?]bar"},
+            {"?foo]"},
+            {"?["},
+            {"?abc/foo]"},
+            {"?abc/["},
+            {"?foo]/abc"},
+            {"?[/abc"},
+            {"?foo]/"},
+            {"?[/"},
+    };
+
+    size_t index = 0;
+
+    for (const auto &testVector: testVectors) {
+        Uri::Uri uri{};
+        ASSERT_FALSE(uri.ParseFromString(testVector)) << index;
+        ++index;
+    }
+
+}
+
+TEST(UriTests, ParseFromStringQueryBarelylegalCharacters) {
+
+    struct TestVector {
+        std::string uriString;
+        std::string query;
+    };
+
+    const std::vector<TestVector> testVectors{
+            {"/?:/foo",                     ":/foo"},
+            {"?foo@/bar",                   "foo@/bar"},
+            {"?hello!",                     "hello!"},
+            {"urn:?hello,%20w%6Frld",       "hello, world"},
+            {"//example.com/foo?(bar)/",    "(bar)/"},
+            {"http://example.com/?foo?bar", "foo?bar"},
+    };
+
+    size_t index = 0;
+
+    for (const auto &testVector: testVectors) {
+        Uri::Uri uri{};
+        ASSERT_TRUE(uri.ParseFromString(testVector.uriString)) << index;
+        ASSERT_EQ(testVector.query, uri.GetQuery());
+        ++index;
+    }
+
+}
+
+TEST(UriTests, ParseFromStringFragmentIllegalCharacters) {
+    const std::vector<std::string> testVectors{
+            {"http://www.example.com/#foo[bar"},
+            {"http://www.example.com/#]bar"},
+            {"http://www.example.com/#foo]"},
+            {"http://www.example.com/#["},
+            {"http://www.example.com/#abc/foo]"},
+            {"http://www.example.com/#abc/["},
+            {"http://www.example.com/#foo]/abc"},
+            {"http://www.example.com/#[/abc"},
+            {"http://www.example.com/#foo]/"},
+            {"http://www.example.com/#[/"},
+            //
+            {"#foo[bar"},
+            {"#]bar"},
+            {"#foo]"},
+            {"#["},
+            {"#abc/foo]"},
+            {"#abc/["},
+            {"#foo]/abc"},
+            {"#[/abc"},
+            {"#foo]/"},
+            {"#[/"},
+    };
+
+    size_t index = 0;
+
+    for (const auto &testVector: testVectors) {
+        Uri::Uri uri{};
+        ASSERT_FALSE(uri.ParseFromString(testVector)) << index;
+        ++index;
+    }
+
+}
+
+TEST(UriTests, ParseFromStringFragmentBarelylegalCharacters) {
+
+    struct TestVector {
+        std::string uriString;
+        std::string fragment;
+    };
+
+    const std::vector<TestVector> testVectors{
+            {"/#:/foo",                     ":/foo"},
+            {"#foo@/bar",                   "foo@/bar"},
+            {"#hello!",                     "hello!"},
+            {"urn:#hello,%20w%6Frld",       "hello, world"},
+            {"//example.com/foo#(bar)/",    "(bar)/"},
+            {"http://example.com/#foo?bar", "foo?bar"},
+    };
+
+    size_t index = 0;
+
+    for (const auto &testVector: testVectors) {
+        Uri::Uri uri{};
+        ASSERT_TRUE(uri.ParseFromString(testVector.uriString)) << index;
+        ASSERT_EQ(testVector.fragment, uri.GetFragment());
+        ++index;
+    }
+
+}
+
 
 #pragma clang diagnostic pop
