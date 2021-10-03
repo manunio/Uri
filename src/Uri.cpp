@@ -258,6 +258,92 @@ namespace Uri {
 
         // Methods
 
+        /*
+         * This class can take in percent encoded character,
+         * decode it, and also detect if there are any problems int the encoding.
+         * */
+        class PercentEncodedCharacterDecoder {
+            //Methods:
+        public:
+            /* This method inputs the next encoded character.
+             *
+             * @param[in] c
+             *  This is the next encoded character to give to the decoder.
+             * @return
+             *  An indication of whether or not the encoded character
+             *  was accepted is returned.
+             * */
+            bool NextEncodedCharacter(char c) {
+                switch (_decoderState) {
+                    case 0: { // % ...
+                        _decoderState = 1;
+                        _decodedCharacter <<= 4;
+                        if (IsCharacterInSet(c, {'0', '9'})) {
+                            _decodedCharacter += (int) (c - '0');
+                        } else if (IsCharacterInSet(c, {'A', 'F'})) {
+                            _decodedCharacter += (int) (c - 'A') + 10;
+                        } else {
+                            return false;
+                        }
+                    }
+                        break;
+                    case 1: { // %[0-9A-F] ...
+                        _decoderState = 2;
+                        _decodedCharacter <<= 4;
+                        if (IsCharacterInSet(c, {'0', '9'})) {
+                            _decodedCharacter += (int) (c - '0');
+                        } else if (IsCharacterInSet(c, {'A', 'F'})) {
+                            _decodedCharacter += (int) (c - 'A') + 10;
+                        } else {
+                            return false;
+                        }
+                    }
+                        break;
+
+                    default:
+                        break;
+                }
+                return true;
+            }
+
+            /* This method checks to see if the decoder is done.
+            * and has decoded the encoded character.
+            *
+            * @return
+            *  An indication of whether or not the decoder is done.
+            *  and has decoded the encoded character is returned.
+            * */
+            bool Done() const {
+                return (_decoderState == 2);
+            }
+
+            /* This method returns the decoded character, once
+            * the decoder is done.
+            *
+            * @return
+            *  The decoded character is returned.
+            * */
+            char GetDecodedCharacter() const {
+                return (char) _decodedCharacter;
+            }
+
+            // Properties
+        private:
+            /*
+             * This method checks to see if the decoder is done.
+             * and has decoded the encoded character.
+             * */
+            char _decodedCharacter = 0;
+
+            /*
+             * This is the current state of the decoder's state machine.
+             * - 0: we haven't yet received the first hex digit.
+             * - 1: we received the first hex digit but not the second.
+             * - 2: we received both hex digit
+             **/
+            size_t _decoderState = 0;
+        };
+
         /**
          * This method checks and decodes the given path segment.
          *
@@ -274,11 +360,12 @@ namespace Uri {
             const auto originalSegment = std::move(segment);
             segment.clear();
             size_t decoderState = 0;
-            int decodedCharacter = 0;
+            PercentEncodedCharacterDecoder pecDecoder{};
             for (const auto c: originalSegment) {
                 switch (decoderState) {
                     case 0: { // default state
                         if (c == '%') {
+                            pecDecoder = PercentEncodedCharacterDecoder{};
                             decoderState = 1;
                         } else {
                             if (IsCharacterInSet(
@@ -304,29 +391,16 @@ namespace Uri {
                         }
                     }
                         break;
+
                     case 1: { // % ...
-                        decoderState = 2;
-                        decodedCharacter <<= 4;
-                        if (IsCharacterInSet(c, {'0', '9'})) {
-                            decodedCharacter += (int) (c - '0');
-                        } else if (IsCharacterInSet(c, {'A', 'F'})) {
-                            decodedCharacter += (int) (c - 'A') + 10;
-                        } else {
+                        if (!pecDecoder.NextEncodedCharacter(c)) {
                             return false;
                         }
-                    }
-                        break;
-                    case 2: { // %[0-9A-F] ...
-                        decoderState = 0;
-                        decodedCharacter <<= 4;
-                        if (IsCharacterInSet(c, {'0', '9'})) {
-                            decodedCharacter += (int) (c - '0');
-                        } else if (IsCharacterInSet(c, {'A', 'F'})) {
-                            decodedCharacter += (int) (c - 'A') + 10;
-                        } else {
-                            return false;
+
+                        if (pecDecoder.Done()) {
+                            decoderState = 0;
+                            segment.push_back((char) pecDecoder.GetDecodedCharacter());
                         }
-                        segment.push_back((char) decodedCharacter);
                     }
                         break;
 
