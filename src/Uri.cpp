@@ -527,7 +527,7 @@ namespace Uri {
                     case 0: { // first character
                         if (c == '[') {
                             host.push_back(c);
-                            decoderState = 4;
+                            decoderState = 3;
                             break;
                         } else {
                             decoderState = 1;
@@ -539,7 +539,7 @@ namespace Uri {
                             pecDecoder = PercentEncodedCharacterDecoder{};
                             decoderState = 2;
                         } else if (c == ':') {
-                            decoderState = 9;
+                            decoderState = 8;
                         } else {
                             if (IsCharacterInSet(
                                     c,
@@ -577,30 +577,30 @@ namespace Uri {
                     }
                         break;
 
-                    case 4: { // IP-literal
+                    case 3: { // IP-literal
                         if (c == 'v') {
                             host.push_back(c);
-                            decoderState = 6;
+                            decoderState = 5;
                             break;
                         } else {
-                            decoderState = 5;
+                            decoderState = 4;
                         }
                     }
                         break;
 
-                    case 5: { // IPv6Address
+                    case 4: { // IPv6Address
                         // TODO: research this offline first,
                         //  before attempting to code it.
                         host.push_back(c);
                         if (c == ']') {
-                            decoderState = 8;
+                            decoderState = 7;
                         }
                     }
                         break;
 
-                    case 6: { // IPvFuture: v ...
+                    case 5: { // IPvFuture: v ...
                         if (c == '.') {
-                            decoderState = 7;
+                            decoderState = 6;
                         } else if (!IsCharacterInSet(c, {'0', '9', 'A', 'F'})) {
                             return false;
                         }
@@ -608,10 +608,10 @@ namespace Uri {
                     }
                         break;
 
-                    case 7: { // IPvFuture:v 1*HEXDIG ...
+                    case 6: { // IPvFuture:v 1*HEXDIG ...
                         host.push_back(c);
                         if (c == ']') {
-                            decoderState = 8;
+                            decoderState = 7;
                         } else if (
                                 !IsCharacterInSet(
                                         c,
@@ -634,17 +634,17 @@ namespace Uri {
                     }
                         break;
 
-                    case 8: { // illegal to have anything else, unless its a colon,
+                    case 7: { // illegal to have anything else, unless its a colon,
                         // in which case it's a port delimiter
                         if (c == ':') {
-                            decoderState = 9;
+                            decoderState = 8;
                         } else {
                             return false;
                         }
                     }
                         break;
 
-                    case 9: { // port
+                    case 8: { // port
                         portString.push_back(c);
                     }
                         break;
