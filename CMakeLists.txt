@@ -66,10 +66,14 @@ run_conan()
 
 set(Headers
         include/Uri/Uri.hpp
+        src/PercentEncodedCharacterDecoder.hpp
+        src/IsCharacterInSet.hpp
         )
 
 set(Sources
         src/Uri.cpp
+        src/PercentEncodedCharacterDecoder.cpp
+        src/IsCharacterInSet.cpp
         )
 
 add_library(${This} STATIC ${Sources} ${Headers})
