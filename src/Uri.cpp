@@ -272,9 +272,7 @@ namespace {
                 }
                     break;
 
-                default: { // makes IDE happy
-
-                }
+                default:
                     break;
             }
         }
@@ -394,9 +392,8 @@ namespace Uri {
                     }
                         break;
 
-                    default: { // makes IDE happy
-
-                    }
+                    default:
+                        break;
                 }
             }
             return true;
@@ -468,11 +465,12 @@ namespace Uri {
             } else {
                 const auto userInfoEncoded = authorityString.substr(0, userInfoDelimiter);
                 size_t decoderState = 0;
-                int decodedCharacter = 0;
+                PercentEncodedCharacterDecoder pecDecoder{};
                 for (const auto c: userInfoEncoded) {
                     switch (decoderState) {
                         case 0: { // default state
                             if (c == '%') {
+                                pecDecoder = PercentEncodedCharacterDecoder{};
                                 decoderState = 1;
                             } else {
                                 if (IsCharacterInSet(
@@ -498,34 +496,21 @@ namespace Uri {
                             }
                         }
                             break;
-                        case 1: { // % ...
-                            decoderState = 2;
-                            decodedCharacter <<= 4;
-                            if (IsCharacterInSet(c, {'0', '9'})) {
-                                decodedCharacter += (int) (c - '0');
-                            } else if (IsCharacterInSet(c, {'A', 'F'})) {
-                                decodedCharacter += (int) (c - 'A') + 10;
-                            } else {
-                                return false;
-                            }
-                        }
-                            break;
-                        case 2: { // %[0-9A-F] ...
-                            decoderState = 0;
-                            decodedCharacter <<= 4;
-                            if (IsCharacterInSet(c, {'0', '9'})) {
-                                decodedCharacter += (int) (c - '0');
-                            } else if (IsCharacterInSet(c, {'A', 'F'})) {
-                                decodedCharacter += (int) (c - 'A') + 10;
-                            } else {
-                                return false;
-                            }
-                            userInfo.push_back((char) decodedCharacter);
-                        }
-                            break;
-                        default: {
 
+                        case 1: { // % ...
+                            if (!pecDecoder.NextEncodedCharacter(c)) {
+                                return false;
+                            }
+
+                            if (pecDecoder.Done()) {
+                                decoderState = 0;
+                                userInfo.push_back((char) pecDecoder.GetDecodedCharacter());
+                            }
                         }
+                            break;
+
+                        default:
+                            break;
                     }
                 }
                 hostPortString = authorityString.substr(userInfoDelimiter + 1);
@@ -536,6 +521,7 @@ namespace Uri {
             size_t decoderState = 0;
             int decodedCharacter = 0;
             host.clear();
+            PercentEncodedCharacterDecoder pecDecoder{};
             for (const auto c: hostPortString) {
                 switch (decoderState) {
                     case 0: { // first character
@@ -550,6 +536,7 @@ namespace Uri {
 
                     case 1: { // reg-name or IPv4Address
                         if (c == '%') {
+                            pecDecoder = PercentEncodedCharacterDecoder{};
                             decoderState = 2;
                         } else if (c == ':') {
                             decoderState = 9;
@@ -579,29 +566,14 @@ namespace Uri {
                         break;
 
                     case 2: { // % ...
-                        decoderState = 3;
-                        decodedCharacter <<= 4;
-                        if (IsCharacterInSet(c, {'0', '9'})) {
-                            decodedCharacter += (int) (c - '0');
-                        } else if (IsCharacterInSet(c, {'A', 'F'})) {
-                            decodedCharacter += (int) (c - 'A') + 10;
-                        } else {
+                        if (!pecDecoder.NextEncodedCharacter(c)) {
                             return false;
                         }
-                    }
-                        break;
 
-                    case 3: { // %[0-9A-F] ...
-                        decoderState = 1;
-                        decodedCharacter <<= 4;
-                        if (IsCharacterInSet(c, {'0', '9'})) {
-                            decodedCharacter += (int) (c - '0');
-                        } else if (IsCharacterInSet(c, {'A', 'F'})) {
-                            decodedCharacter += (int) (c - 'A') + 10;
-                        } else {
-                            return false;
+                        if (pecDecoder.Done()) {
+                            decoderState = 1;
+                            host.push_back((char) pecDecoder.GetDecodedCharacter());
                         }
-                        host.push_back((char) decodedCharacter);
                     }
                         break;
 
@@ -677,9 +649,8 @@ namespace Uri {
                     }
                         break;
 
-                    default: {
-                        // fail-safe.
-                    }
+                    default:
+                        break;
                 }
             }
             if (portString.empty()) {
