@@ -6,7 +6,7 @@
  * © 2021 Manu Nair
  */
 
-#include "IsCharacterInSet.hpp"
+#include "CharacterInSet.hpp"
 #include "PercentEncodedCharacterDecoder.hpp"
 
 #include <string>
@@ -15,6 +15,159 @@
 #include <functional>
 
 namespace {
+
+    /**
+     * This is the character set containing just the alphabetic characters
+     * from the ASCII character set.
+     */
+    const Uri::CharacterSet ALPHA{
+            Uri::CharacterSet('a', 'z'),
+            Uri::CharacterSet('A', 'Z')
+    };
+
+    /**
+     * This is the character set containing numbers.
+     */
+    const Uri::CharacterSet DIGIT('0', '9');
+
+
+    /**
+    * This is the character set containing just the characters allowed
+    * in a hexadecimal digit.
+    */
+    const Uri::CharacterSet HEXDIG{
+            Uri::CharacterSet('0', '9'),
+            Uri::CharacterSet('A', 'F'),
+            Uri::CharacterSet('a', 'f')
+    };
+
+
+    /**
+     * This is the character set corresponding to the "unreserved" syntax
+     * specified in RFC 3986 (https://datatracker.ietf.org/doc/html/rfc3986)
+     */
+    const Uri::CharacterSet UNRESERVED{
+            ALPHA,
+            DIGIT,
+            Uri::CharacterSet('-'),
+            Uri::CharacterSet('.'),
+            Uri::CharacterSet('_'),
+            Uri::CharacterSet('~')
+    };
+
+    /**
+     * This is the character set corresponds to the "sub-delims" syntax
+     * specified in RFC 3986 (https://tools.ietf.org/html/rfc3986).
+     */
+    const Uri::CharacterSet SUB_DELIMS{
+            Uri::CharacterSet('!'),
+            Uri::CharacterSet('$'),
+            Uri::CharacterSet('&'),
+            Uri::CharacterSet('\''),
+            Uri::CharacterSet('('),
+            Uri::CharacterSet(')'),
+            Uri::CharacterSet('*'),
+            Uri::CharacterSet('+'),
+            Uri::CharacterSet(','),
+            Uri::CharacterSet(';'),
+            Uri::CharacterSet('=')
+    };
+
+    /**
+     * This is the character set corresponds to the second part
+     * of the "scheme" syntax
+     * specified in RFC 3986 (https://tools.ietf.org/html/rfc3986).
+     */
+    const Uri::CharacterSet SCHEME_NOT_FIRST{
+            ALPHA,
+            DIGIT,
+            Uri::CharacterSet('+'),
+            Uri::CharacterSet('-'),
+            Uri::CharacterSet('.'),
+    };
+
+    /**
+     * This is the character set corresponds to the "pchar" syntax
+     * specified in RFC 3986 (https://tools.ietf.org/html/rfc3986),
+     * leaving out "pct-encoded".
+     */
+    const Uri::CharacterSet PCHAR_NOT_PCT_ENCODED{
+            UNRESERVED,
+            SUB_DELIMS,
+            Uri::CharacterSet(':'),
+            Uri::CharacterSet('@')
+    };
+
+    /**
+   * This is the character set corresponds to the "query" syntax
+   * and the "fragment" syntax
+   * specified in RFC 3986 (https://tools.ietf.org/html/rfc3986),
+   * leaving out "pct-encoded".
+   */
+    const Uri::CharacterSet QUERY_OR_FRAGMENT_NOT_PCT_ENCODED{
+            PCHAR_NOT_PCT_ENCODED,
+            Uri::CharacterSet('/'),
+            Uri::CharacterSet('?')
+    };
+
+    /**
+     * This is the character set almost corresponds to the "query" syntax
+     * specified in RFC 3986 (https://tools.ietf.org/html/rfc3986),
+     * leaving out "pct-encoded", except that '+' is also excluded, because
+     * for some web services (e.g. AWS S3) a '+' is treated as
+     * synonymous with a space (' ') and thus gets misinterpreted.
+     */
+    const Uri::CharacterSet QUERY_NOT_PCT_ENCODED_WITHOUT_PLUS{
+            UNRESERVED,
+            Uri::CharacterSet('!'),
+            Uri::CharacterSet('$'),
+            Uri::CharacterSet('&'),
+            Uri::CharacterSet('\''),
+            Uri::CharacterSet('('),
+            Uri::CharacterSet(')'),
+            Uri::CharacterSet('*'),
+            Uri::CharacterSet(','),
+            Uri::CharacterSet(';'),
+            Uri::CharacterSet('='),
+            Uri::CharacterSet(':'),
+            Uri::CharacterSet('@'),
+            Uri::CharacterSet('/'),
+            Uri::CharacterSet('?')
+    };
+
+    /**
+     * This is the character set corresponds to the "userinfo" syntax
+     * specified in RFC 3986 (https://tools.ietf.org/html/rfc3986),
+     * leaving out "pct-encoded".
+     */
+    const Uri::CharacterSet USER_INFO_NOT_PCT_ENCODED{
+            UNRESERVED,
+            SUB_DELIMS,
+            Uri::CharacterSet(':'),
+    };
+
+    /**
+     * This is the character set corresponds to the "reg-name" syntax
+     * specified in RFC 3986 (https://tools.ietf.org/html/rfc3986),
+     * leaving out "pct-encoded".
+     */
+    const Uri::CharacterSet REG_NAME_NOT_PCT_ENCODED{
+            UNRESERVED,
+            SUB_DELIMS
+    };
+
+    /**
+     * This is the character set corresponds to the last part of
+     * the "IPvFuture" syntax
+     * specified in RFC 3986 (https://tools.ietf.org/html/rfc3986).
+     */
+    const Uri::CharacterSet IPV_FUTURE_LAST_PART{
+            UNRESERVED,
+            SUB_DELIMS,
+            Uri::CharacterSet(':')
+    };
+
+
     /**
      * This function parses the given string as an unsigned 16-bit
      * integer, detecting invalid characters, overflow, etc.
@@ -89,9 +242,9 @@ namespace {
 
             bool check{};
             if (*isFirstCharacter) {
-                check = Uri::IsCharacterInSet(c, {'a', 'z', 'A', 'Z'});
+                check = Uri::IsCharacterInSet(c, ALPHA);
             } else {
-                check = Uri::IsCharacterInSet(c, {'a', 'z', 'A', 'Z', '0', '9', '+', '+', '-', '-', '.', '.'});
+                check = Uri::IsCharacterInSet(c, SCHEME_NOT_FIRST);
             }
             *isFirstCharacter = false;
             return check;
@@ -125,20 +278,7 @@ namespace {
                         if (Uri::IsCharacterInSet(
                                 c,
                                 {
-                                        // unreserved
-                                        'a', 'z', 'A', 'Z', // ALPHA
-                                        '0', '9', //DIGIT
-                                        '-', '-', '.', '.', '_', '_', '~', '~',
-
-                                        // sub-delims
-                                        '!', '!', '$', '$', '&', '&', '\'', '\'', '(', '(', ')', ')',
-                                        '*', '*', '+', '+', ',', ',', ';', ';', '=', '=',
-
-                                        // (also allowed in pchar)
-                                        ':', ':', '@', '@',
-
-                                        // (also allowed in query or fragment)
-                                        '/', '/', '?', '?'
+                                        QUERY_OR_FRAGMENT_NOT_PCT_ENCODED
                                 }
                         )) {
                             queryOrFragment.push_back(c);
@@ -247,17 +387,7 @@ namespace Uri {
                             if (IsCharacterInSet(
                                     c,
                                     {
-                                            // unreserved
-                                            'a', 'z', 'A', 'Z', // ALPHA
-                                            '0', '9', //DIGIT
-                                            '-', '-', '.', '.', '_', '_', '~', '~',
-
-                                            // sub-delims
-                                            '!', '!', '$', '$', '&', '&', '\'', '\'', '(', '(', ')', ')',
-                                            '*', '*', '+', '+', ',', ',', ';', ';', '=', '=',
-
-                                            // (also allowed in segment or pchar)
-                                            ':', ':', '@', '@'
+                                            PCHAR_NOT_PCT_ENCODED
                                     }
                             )) {
                                 segment.push_back(c);
@@ -364,17 +494,7 @@ namespace Uri {
                                 if (IsCharacterInSet(
                                         c,
                                         {
-                                                // unreserved
-                                                'a', 'z', 'A', 'Z', // ALPHA
-                                                '0', '9', //DIGIT
-                                                '-', '-', '.', '.', '_', '_', '~', '~',
-
-                                                // sub-delims
-                                                '!', '!', '$', '$', '&', '&', '\'', '\'', '(', '(', ')', ')',
-                                                '*', '*', '+', '+', ',', ',', ';', ';', '=', '=',
-
-                                                // (also allowed in user-info)
-                                                ':', ':',
+                                                USER_INFO_NOT_PCT_ENCODED
                                         }
                                 )) {
                                     userInfo.push_back(c);
@@ -432,17 +552,7 @@ namespace Uri {
                             if (IsCharacterInSet(
                                     c,
                                     {
-                                            // unreserved
-                                            'a', 'z', 'A', 'Z', // ALPHA
-                                            '0', '9', //DIGIT
-                                            '-', '-', '.', '.', '_', '_', '~', '~',
-
-                                            // sub-delims
-                                            '!', '!', '$', '$', '&', '&', '\'', '\'', '(', '(', ')', ')',
-                                            '*', '*', '+', '+', ',', ',', ';', ';', '=', '=',
-
-                                            // (also allowed in reg-name)
-                                            ':', ':',
+                                            REG_NAME_NOT_PCT_ENCODED
                                     }
                             )) {
                                 host.push_back(c);
@@ -489,7 +599,7 @@ namespace Uri {
                     case 5: { // IPvFuture: v ...
                         if (c == '.') {
                             decoderState = 6;
-                        } else if (!IsCharacterInSet(c, {'0', '9', 'A', 'F'})) {
+                        } else if (!IsCharacterInSet(c, HEXDIG)) {
                             return false;
                         }
                         host.push_back(c);
@@ -503,18 +613,7 @@ namespace Uri {
                         } else if (
                                 !IsCharacterInSet(
                                         c,
-                                        {
-                                                // unreserved
-                                                'a', 'z', 'A', 'Z', // ALPHA
-                                                '0', '9', //DIGIT
-                                                '-', '-', '.', '.', '_', '_', '~', '~',
-
-                                                // sub-delims
-                                                '!', '!', '$', '$', '&', '&', '\'', '\'', '(', '(', ')', ')',
-                                                '*', '*', '+', '+', ',', ',', ';', ';', '=', '=',
-
-                                                // (also allowed in IPvFuture)
-                                                ':', ':',
+                                        {IPV_FUTURE_LAST_PART
                                         }
                                 )) {
                             return false;

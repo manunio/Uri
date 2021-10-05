@@ -1,5 +1,21 @@
 #include "PercentEncodedCharacterDecoder.hpp"
-#include "IsCharacterInSet.hpp"
+#include "CharacterInSet.hpp"
+
+
+namespace {
+    /**
+     * This is the character set containing numbers.
+     */
+    const Uri::CharacterSet DIGIT('0', '9');
+
+    /**
+     * This is the character set containing just the upper-case
+     * letters 'A' through 'F' used in upper-case hexadecimal.
+     */
+    const Uri::CharacterSet HEX{
+            Uri::CharacterSet('A', 'F')
+    };
+}
 
 namespace Uri {
 
@@ -25,9 +41,9 @@ namespace Uri {
             case 0: { // % ...
                 impl_->decoderState = 1;
                 impl_->decodedCharacter <<= 4;
-                if (IsCharacterInSet(c, {'0', '9'})) {
+                if (IsCharacterInSet(c, DIGIT)) {
                     impl_->decodedCharacter += (int) (c - '0');
-                } else if (IsCharacterInSet(c, {'A', 'F'})) {
+                } else if (IsCharacterInSet(c, HEX)) {
                     impl_->decodedCharacter += (int) (c - 'A') + 10;
                 } else {
                     return false;
@@ -37,9 +53,9 @@ namespace Uri {
             case 1: { // %[0-9A-F] ...
                 impl_->decoderState = 2;
                 impl_->decodedCharacter <<= 4;
-                if (IsCharacterInSet(c, {'0', '9'})) {
+                if (IsCharacterInSet(c, DIGIT)) {
                     impl_->decodedCharacter += (int) (c - '0');
-                } else if (IsCharacterInSet(c, {'A', 'F'})) {
+                } else if (IsCharacterInSet(c, HEX)) {
                     impl_->decodedCharacter += (int) (c - 'A') + 10;
                 } else {
                     return false;
@@ -67,7 +83,8 @@ namespace Uri {
 
     PercentEncodedCharacterDecoder::PercentEncodedCharacterDecoder(PercentEncodedCharacterDecoder &&) = default;
 
-    PercentEncodedCharacterDecoder &PercentEncodedCharacterDecoder::operator=(PercentEncodedCharacterDecoder &&) = default;
+    PercentEncodedCharacterDecoder &
+    PercentEncodedCharacterDecoder::operator=(PercentEncodedCharacterDecoder &&) = default;
 
     PercentEncodedCharacterDecoder::~PercentEncodedCharacterDecoder() = default;
 
